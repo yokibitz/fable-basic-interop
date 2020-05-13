@@ -2,7 +2,8 @@
   "name": "App",
   "private": false,
   "scripts": {
-    "start": "webpack-dev-server"
+    "start": "webpack-dev-server",
+    "build": "webpack"
   },
   "dependencies": {
     "@babel/core": "^7.7.7",
