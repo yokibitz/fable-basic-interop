@@ -82,3 +82,4 @@ let sketch (it: p5) =
 
 // draw
 p5 (sketch) |> ignore
+p5 (sketch) |> ignore
