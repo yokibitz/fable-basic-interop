@@ -14,8 +14,8 @@ let make2DArray cols rows: Grid =
         arr.[i] <- Array.zeroCreate rows
     arr
 
-let width = 1500.
-let height = 1200.
+let width = 1000.
+let height = 800.
 let resolution = 5.
 let cols = int (width / resolution)
 let rows = int (height / resolution)
