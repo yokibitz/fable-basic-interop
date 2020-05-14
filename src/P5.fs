@@ -28,6 +28,7 @@ type p5(?sketch: p5 -> unit, ?id: string) =
     member __.frameRate(value: int): unit = jsNative
     member __.noLoop(): unit = jsNative
     member __.redraw(?n: int): unit = jsNative
+    member __.remove(): unit = jsNative
 
     member __.rect(x: float, y: float, w: float, ?h: float, ?tl: float, ?tr: float, ?br: float, ?bl: float,
                    ?detailX: int, ?detailY: int): unit = jsNative

@@ -1,84 +1,101 @@
 module App
 
 open Fable.Core
+open Elmish
+open Elmish.React
 open System
-open P5
+open Feliz
 
 JS.console.log "Hello from Fable!"
 
-type Grid = int array array
+type State =
+    { InputDimensions: Dimensions
+      Board: P5.p5 }
 
-let make2DArray cols rows: Grid =
-    let arr = Array.create cols Array.empty
-    for i in 0 .. cols - 1 do
-        arr.[i] <- Array.zeroCreate rows
-    arr
-
-let width = 1000.
-let height = 800.
-let resolution = 5.
-let cols = int (width / resolution)
-let rows = int (height / resolution)
-let mutable grid: Grid = make2DArray cols rows
-
-JS.console.log (string cols)
-JS.console.log (string rows)
-
-// let replaceAtPos (x: Grid) col row newValue: Grid =
-//     [| for a in 0 .. (cols - 1) -> [| for b in 0 .. (rows - 1) -> if a = col && b = row then newValue else x.[a].[b] |] |]
-
-let rng = new Random()
-let randomCh = fun () -> rng.Next(2)
-
-let countNeighbors (grid: Grid) x y =
-    let mutable sum = 0
-    for i in -1 .. 1 do
-        for j in -1 .. 1 do
-            let col = (x + i + cols) % cols
-            let row = (y + j + rows) % rows
-            sum <- sum + grid.[col].[row]
-
-    sum <- sum - grid.[x].[y]
-    sum
-
-let nextGrid (abc: Grid) (x: int) (y: int) state neighbors =
-    if state = 0 && neighbors = 3 then abc.[x].[y] <- 1
-    else if state = 1 && (neighbors < 2 || neighbors > 3) then abc.[x].[y] <- 0
-    else abc.[x].[y] <- state
+type Msg =
+    | InputWidth of float
+    | InputHeight of float
+    | InputResolution of int
+    | SetDimensions of Dimensions
 
 let init () =
-    for i in 0 .. (cols - 1) do
-        for j in 0 .. (rows - 1) do
-            let rndValue = randomCh ()
-            grid.[i].[j] <- rndValue
+    let initDimensions =
+        { Width = 1000.
+          Height = 800.
+          Resolution = 5 }
 
-let sketch (it: p5) =
-    it.setup <-
-        fun () ->
-            //it.frameRate (45)
-            it.createCanvas (width, height)
-            //it.noLoop ()
-            init ()
+    { InputDimensions = initDimensions
+      Board =
+          displayBoard
+              { Width = initDimensions.Width
+                Height = initDimensions.Height
+                Resolution = initDimensions.Resolution } }
 
-    it.draw <-
-        fun () ->
-            it.background (0)
-            for i in 0 .. (cols - 1) do
-                for j in 0 .. (rows - 1) do
-                    let x = float i * resolution
-                    let y = float j * resolution
-                    if grid.[i].[j] = 1
-                    then it.rect (x, y, resolution - 1., resolution - 1.)
+let update msg (state: State) =
+    match msg with
+    | InputWidth width ->
+        let newDimension =
+            { state.InputDimensions with
+                  Width = width }
 
-            let next = make2DArray cols rows
-            for i in 0 .. (cols - 1) do
-                for j in 0 .. (rows - 1) do
-                    let neighbors = countNeighbors grid i j
-                    nextGrid next i j grid.[i].[j] neighbors
+        { state with
+              InputDimensions = newDimension }
+    | InputHeight height ->
+        let newDimension =
+            { state.InputDimensions with
+                  Height = height }
 
-            grid <- next
+        { state with
+              InputDimensions = newDimension }
+    | InputResolution resolution ->
+        let newDimension =
+            { state.InputDimensions with
+                  Resolution = resolution }
 
-    it.mousePressed <- fun o -> init ()
+        { state with
+              InputDimensions = newDimension }
 
-// draw
-p5 (sketch) |> ignore
+    | SetDimensions dimensions ->
+        state.Board.remove ()
+
+        let newP5 = displayBoard dimensions
+
+        { state with
+              InputDimensions = dimensions
+              Board = newP5 }
+
+let render (state: State) (dispatch: Msg -> unit) =
+    Html.div
+        [ prop.children
+            [ Html.div
+                [ prop.children
+                    [ Html.span "Width: "
+                      Html.input
+                          [ prop.valueOrDefault state.InputDimensions.Width
+                            prop.onChange (float >> InputWidth >> dispatch) ] ] ]
+
+              Html.div
+                  [ prop.children
+                      [ Html.span "Height: "
+                        Html.input
+                            [ prop.valueOrDefault state.InputDimensions.Height
+                              prop.onChange (float >> InputHeight >> dispatch) ] ] ]
+
+              Html.div
+                  [ prop.children
+                      [ Html.span "Resolution: "
+                        Html.input
+                            [ prop.valueOrDefault state.InputDimensions.Resolution
+                              prop.onChange (int >> InputResolution >> dispatch) ] ] ]
+
+
+              Html.button
+                  [ prop.text "Apply"
+                    prop.onClick (fun _ -> dispatch (SetDimensions state.InputDimensions)) ] ] ]
+
+
+
+
+Program.mkSimple init update render
+|> Program.withReactSynchronous "app"
+|> Program.run
